@@ -1,87 +1,71 @@
-
 #include <stdio.h>
 #include <string.h>
-#define SIZE 20 
 
-// تعريف هيكلية المخزن الدائري كما ورد في الـ Pseudocode
-struct CircularBuffer {
-    char buffer[SIZE];
-    int head;
-    int tail;
-    int count;
+#define MAX_SIZE 15 
+
+// هيكلية المخزن بأسماء بسيطة
+struct MyBuffer {
+    char data_arr[MAX_SIZE];
+    int read_pos;  // head
+    int write_pos; // tail
+    int active_elements; // count
 };
 
-// دالة التهيئة (Initialization)
-void init(struct CircularBuffer *cb) {
-    cb->head = 0;
-    cb->tail = 0;
-    cb->count = 0;
+// دالة التجهيز
+void setupBuffer(struct MyBuffer *obj) {
+    obj->read_pos = 0;
+    obj->write_pos = 0;
+    obj->active_elements = 0;
 }
 
-// دالة التحقق من الامتلاء
-int isFull(struct CircularBuffer *cb) {
-    return cb->count == SIZE;
-}
-
-// دالة التحقق من الفراغ
-int isEmpty(struct CircularBuffer *cb) {
-    return cb->count == 0;
-}
-
-// دالة الكتابة (Write) مع معالجة الـ Overflow
-void write_to_buffer(struct CircularBuffer *cb, char data) {
-    if (isFull(cb)) {
-        printf("\n[Error] Buffer Overflow! Cannot add: %c", data);
+// دالة الإضافة مع التحقق من الامتلاء
+void pushData(struct MyBuffer *obj, char val) {
+    if (obj->active_elements == MAX_SIZE) {
+        printf("(!) Full: can't add '%c'\n", val);
         return;
     }
-    cb->buffer[cb->tail] = data;
-    cb->tail = (cb->tail + 1) % SIZE; // الالتفاف الدائري
-    cb->count++;
+    obj->data_arr[obj->write_pos] = val;
+    obj->write_pos = (obj->write_pos + 1) % MAX_SIZE; // حركة الالتفاف
+    obj->active_elements++;
 }
 
-// دالة القراءة (Read) مع معالجة الـ Underflow
-char read_from_buffer(struct CircularBuffer *cb) {
-    if (isEmpty(cb)) {
-        printf("\n[Error] Buffer Underflow!");
-        return '\0';
+// دالة السحب مع التحقق من الفراغ
+char popData(struct MyBuffer *obj) {
+    if (obj->active_elements == 0) {
+        return '\0'; 
     }
-    char data = cb->buffer[cb->head];
-    cb->head = (cb->head + 1) % SIZE; // الالتفاف الدائري
-    cb->count--;
-    return data;
+    char res = obj->data_arr[obj->read_pos];
+    obj->read_pos = (obj->read_pos + 1) % MAX_SIZE; // حركة الالتفاف
+    obj->active_elements--;
+    return res;
 }
 
 int main() {
-    struct CircularBuffer cb;
-    init(&cb); // تنفيذ دالة التهيئة [cite: 78]
+    struct MyBuffer myQ;
+    setupBuffer(&myQ);
 
-    char name[100];
+    char studentName[50];
     
-    // إدخال الاسم [cite: 80]
-    printf("Enter your name: ");
-    scanf("%s", name); 
+    // طلب الاسم من المستخدم
+    printf("Enter Name: ");
+    scanf("%s", studentName); 
 
-    // إضافة اللاحقة المطلوبة [cite: 83]
-    strcat(name, "-CE-ESY");
+    // إضافة اللاحقة المطلوبة
+    strcat(studentName, "-CE-ESY");
     
-    printf("\n--- Processing Data ---\n");
-    
-    // خزن الناتج داخل المخزن [cite: 85, 86]
-    for (int i = 0; i < strlen(name); i++) {
-        write_to_buffer(&cb, name[i]);
+    printf("\n--- Start Writing ---\n");
+    for (int i = 0; i < strlen(studentName); i++) {
+        pushData(&myQ, studentName[i]);
     }
 
-    // عرض النتيجة والتأكد أن المخزن سيصبح فارغاً [cite: 88, 91]
-    printf("Buffer Output: ");
-    while (!isEmpty(&cb)) {
-        char c = read_from_buffer(&cb);
+    printf("\n--- Start Reading ---\n");
+    printf("Output: ");
+    while (myQ.active_elements > 0) {
+        char c = popData(&myQ);
         if (c != '\0') printf("%c", c);
     }
     
-    // التحقق النهائي من حالة المخزن [cite: 21]
-    if (isEmpty(&cb)) {
-        printf("\n\nStatus: Buffer is now empty. Success!");
-    }
+    printf("\n\nFinal Check: Buffer has %d elements.\n", myQ.active_elements);
 
     return 0;
-}
+} 
